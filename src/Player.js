@@ -1,12 +1,13 @@
 export class Player extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y) {
-        super(scene, x, y, 'megaman');
+        super(scene, x, y, 'megaman_idle');
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        // Ajustar hitbox do sprite (Megaman tem aprox 24px de altura real no sprite)
+        // Ajustar escala e hitbox (Imagens individuais costumam ser grandes)
+        this.setDisplaySize(24, 24);
         this.body.setSize(20, 24);
-        this.body.setOffset(6, 8);
+        this.body.setOffset(2, 0);
 
         this.body.setCollideWorldBounds(true);
         this.scene = scene;
@@ -21,6 +22,7 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.maxHp = 10;
         this.isInvulnerable = false;
         this.invulTimer = 0;
+        this.shootingVisualTimer = 0;
 
         this.canDoubleJump = false;
         this.isSliding = false;
@@ -32,7 +34,8 @@ export class Player extends Phaser.GameObjects.Sprite {
             IDLE: 'IDLE',
             WALKING: 'WALKING',
             JUMPING: 'JUMPING',
-            SLIDING: 'SLIDING'
+            SLIDING: 'SLIDING',
+            SHOOTING: 'SHOOTING'
         };
         this.currentState = this.states.IDLE;
     }
@@ -45,23 +48,42 @@ export class Player extends Phaser.GameObjects.Sprite {
             if (!this.isSliding) {
                 if (Math.abs(this.body.velocity.x) > 0) {
                     this.currentState = this.states.WALKING;
-                    this.play('walk', true);
                 } else {
                     this.currentState = this.states.IDLE;
-                    this.play('idle', true);
                 }
             }
         } else {
             this.currentState = this.states.JUMPING;
-            this.play('jump', true);
         }
 
-        // Flip sprite based on direction
-        if (this.body.velocity.x > 0) {
-            this.setFlipX(false);
-        } else if (this.body.velocity.x < 0) {
-            this.setFlipX(true);
+        // Texture switching logic
+        if (this.shootingVisualTimer > 0) {
+            this.setTexture('megaman_shooting');
+            this.shootingVisualTimer -= this.scene.game.loop.delta;
+            this.stopRunTween();
+        } else {
+            switch (this.currentState) {
+                case this.states.JUMPING:
+                    this.setTexture('megaman_jump');
+                    this.stopRunTween();
+                    break;
+                case this.states.WALKING:
+                    this.setTexture('megaman_run');
+                    this.startRunTween();
+                    break;
+                case this.states.SLIDING:
+                    this.setTexture('megaman_slide');
+                    this.stopRunTween(); // Added this line to stop tween when sliding
+                    break;
+                default:
+                    this.setTexture('megaman_idle');
+                    this.stopRunTween();
+            }
         }
+
+        // Flip sprite
+        if (this.body.velocity.x > 0) this.setFlipX(false);
+        else if (this.body.velocity.x < 0) this.setFlipX(true);
 
         this.handleMovement(cursors, keyZ, keySpace, keyC, onGround);
         this.handleCombat(keyX);
@@ -152,7 +174,8 @@ export class Player extends Phaser.GameObjects.Sprite {
     }
 
     shoot(isCharged) {
-        const direction = this.body.velocity.x >= 0 ? 1 : -1;
+        this.shootingVisualTimer = 200; // Show shooting texture for 200ms
+        const direction = this.flipX ? -1 : 1;
         const color = isCharged ? 0xffff00 : 0x00ffff;
         const size = isCharged ? 16 : 8;
         const damage = isCharged ? 2 : 1;

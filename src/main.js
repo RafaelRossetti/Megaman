@@ -1,3 +1,4 @@
+import { StartScene } from './StartScene.js';
 import { MainScene } from './Scene.js';
 
 const config = {
@@ -13,7 +14,7 @@ const config = {
             debug: false
         }
     },
-    scene: [MainScene],
+    scene: [StartScene, MainScene],
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH

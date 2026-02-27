@@ -1,14 +1,15 @@
 export class Boss extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y) {
-        super(scene, x, y, 'megaman');
+        super(scene, x, y, 'megaman_idle');
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
         this.setTint(0xff0000); // Red Mirror Match
         this.setFlipX(true); // Encarar o player
+        this.setDisplaySize(24, 24);
 
         this.body.setSize(20, 24);
-        this.body.setOffset(6, 8);
+        this.body.setOffset(2, 0);
 
         this.body.setCollideWorldBounds(true);
         this.scene = scene;
@@ -44,6 +45,7 @@ export class Boss extends Phaser.GameObjects.Sprite {
             this.handleAI(distance);
         } else {
             this.body.setVelocityX(0); // Stand still
+            this.setTexture('megaman_idle');
         }
 
         if (this.hp < this.maxHp / 2) {
@@ -55,15 +57,11 @@ export class Boss extends Phaser.GameObjects.Sprite {
         if (this.x > this.player.x) {
             this.body.setVelocityX(-this.SPEED);
             this.setFlipX(true);
-            this.play('walk', true);
+            this.setTexture('megaman_run');
         } else {
             this.body.setVelocityX(this.SPEED);
             this.setFlipX(false);
-            this.play('walk', true);
-        }
-
-        if (this.body.velocity.x === 0) {
-            this.play('idle', true);
+            this.setTexture('megaman_run');
         }
 
         this.shootTimer -= this.scene.game.loop.delta;

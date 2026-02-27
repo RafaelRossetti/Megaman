@@ -1,5 +1,6 @@
 import { Player } from './Player.js';
 import { Boss } from './Boss.js';
+import { Enemy } from './Enemy.js';
 
 export class MainScene extends Phaser.Scene {
     constructor() {
@@ -7,46 +8,10 @@ export class MainScene extends Phaser.Scene {
     }
 
     preload() {
-        // Corregar assets usando caminhos relativos ao index.html
-        this.load.audio('soundtrack', './Soundtrack.mp3');
-        this.load.spritesheet('megaman', './sprite.gif', {
-            frameWidth: 32,
-            frameHeight: 32
-        });
+        // Assets já carregados na StartScene
     }
 
     create() {
-        // Criar animações do Player
-        this.anims.create({
-            key: 'idle',
-            frames: this.anims.generateFrameNumbers('megaman', { start: 0, end: 0 }),
-            frameRate: 1,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'walk',
-            frames: this.anims.generateFrameNumbers('megaman', { start: 1, end: 3 }),
-            frameRate: 10,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'jump',
-            frames: this.anims.generateFrameNumbers('megaman', { start: 4, end: 4 }),
-            frameRate: 1
-        });
-
-        this.anims.create({
-            key: 'slide',
-            frames: this.anims.generateFrameNumbers('megaman', { start: 5, end: 5 }),
-            frameRate: 1
-        });
-
-        // Iniciar Música
-        const music = this.sound.add('soundtrack', { loop: true, volume: 0.5 });
-        music.play();
-
         // Full Level Width
         this.levelWidth = 2000;
         this.physics.world.setBounds(0, 0, this.levelWidth, 224);
@@ -55,13 +20,17 @@ export class MainScene extends Phaser.Scene {
         this.ground = this.add.rectangle(0, 200, this.levelWidth, 24, 0x666666).setOrigin(0);
         this.physics.add.existing(this.ground, true);
 
+        // Groups
+        this.playerProjectiles = this.physics.add.group();
+        this.bossProjectiles = this.physics.add.group();
+        this.enemies = this.physics.add.group();
+
         // Create player
         this.player = new Player(this, 50, 150);
         this.physics.add.collider(this.player, this.ground);
 
-        // Groups
-        this.playerProjectiles = this.physics.add.group();
-        this.bossProjectiles = this.physics.add.group();
+        // Spawn some weak enemies
+        this.spawnEnemies();
 
         // Items and Checkpoints
         this.createItems();
@@ -77,9 +46,14 @@ export class MainScene extends Phaser.Scene {
         this.add.text(10, 25, 'HP', { fontSize: '8px', fill: '#fff' }).setScrollFactor(0);
 
         // Collisions
-        // Solid body collision between player and boss
-        this.physics.add.collider(this.player, this.boss, () => {
+        this.physics.add.collider(this.enemies, this.ground);
+        this.physics.add.collider(this.player, this.enemies, () => {
             this.player.takeDamage(1);
+        });
+
+        this.physics.add.overlap(this.playerProjectiles, this.enemies, (enemy, bullet) => {
+            enemy.takeDamage(bullet.damage || 1);
+            bullet.destroy();
         });
 
         this.physics.add.overlap(this.playerProjectiles, this.boss, (boss, bullet) => {
@@ -98,6 +72,15 @@ export class MainScene extends Phaser.Scene {
         this.keyZ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
         this.keyC = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
         this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    }
+
+    spawnEnemies() {
+        // Spawn enemies at different positions
+        const spawnPoints = [400, 700, 1000, 1300, 1600];
+        spawnPoints.forEach(x => {
+            const enemy = new Enemy(this, x, 150);
+            this.enemies.add(enemy);
+        });
     }
 
     createItems() {
@@ -133,6 +116,11 @@ export class MainScene extends Phaser.Scene {
     update(time, delta) {
         this.player.update(this.cursors, this.keyX, this.keyZ, this.keyC, this.keySpace);
         if (this.boss) this.boss.update();
+
+        // Update all enemies
+        this.enemies.getChildren().forEach(enemy => {
+            enemy.update();
+        });
 
         // Update HP Bar
         const hpPercent = this.player.hp / this.player.maxHp;
