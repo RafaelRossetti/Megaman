@@ -141,7 +141,7 @@ export class Player extends Phaser.GameObjects.Sprite {
     startSlide(direction) {
         this.isSliding = true;
         this.currentState = this.states.SLIDING;
-        this.play('slide', true);
+        this.setTexture('megaman_run'); // Use run texture for sliding if no slide sprite
         this.slideTimer = this.SLIDE_DURATION;
         this.body.setVelocityX(this.SLIDE_SPEED * direction);
         this.body.setSize(20, 12);
@@ -152,6 +152,24 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.isSliding = false;
         this.body.setSize(20, 24);
         this.body.setOffset(6, 8);
+    }
+
+    startRunTween() {
+        if (this.runTween) return;
+        this.runTween = this.scene.tweens.add({
+            targets: this,
+            y: '-=2',
+            duration: 100,
+            yoyo: true,
+            loop: -1
+        });
+    }
+
+    stopRunTween() {
+        if (this.runTween) {
+            this.runTween.remove();
+            this.runTween = null;
+        }
     }
 
     handleCombat(keyX) {
