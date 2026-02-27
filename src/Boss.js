@@ -1,8 +1,14 @@
-export class Boss extends Phaser.GameObjects.Rectangle {
+export class Boss extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y) {
-        super(scene, x, y, 16, 24, 0xff0000);
+        super(scene, x, y, 'megaman');
         scene.add.existing(this);
         scene.physics.add.existing(this);
+
+        this.setTint(0xff0000); // Red Mirror Match
+        this.setFlipX(true); // Encarar o player
+
+        this.body.setSize(20, 24);
+        this.body.setOffset(6, 8);
 
         this.body.setCollideWorldBounds(true);
         this.scene = scene;
@@ -48,8 +54,16 @@ export class Boss extends Phaser.GameObjects.Rectangle {
     handleAI(distance) {
         if (this.x > this.player.x) {
             this.body.setVelocityX(-this.SPEED);
+            this.setFlipX(true);
+            this.play('walk', true);
         } else {
             this.body.setVelocityX(this.SPEED);
+            this.setFlipX(false);
+            this.play('walk', true);
+        }
+
+        if (this.body.velocity.x === 0) {
+            this.play('idle', true);
         }
 
         this.shootTimer -= this.scene.game.loop.delta;
@@ -70,9 +84,9 @@ export class Boss extends Phaser.GameObjects.Rectangle {
         }
 
         if (this.isCharging) {
-            this.setFillStyle(0xffaaaa);
+            this.setTint(0xffaaaa);
         } else {
-            this.setFillStyle(0xff0000);
+            this.setTint(0xff0000);
         }
     }
 

@@ -1,8 +1,12 @@
-export class Player extends Phaser.GameObjects.Rectangle {
+export class Player extends Phaser.GameObjects.Sprite {
     constructor(scene, x, y) {
-        super(scene, x, y, 16, 24, 0x00aaff);
+        super(scene, x, y, 'megaman');
         scene.add.existing(this);
         scene.physics.add.existing(this);
+
+        // Ajustar hitbox do sprite (Megaman tem aprox 24px de altura real no sprite)
+        this.body.setSize(20, 24);
+        this.body.setOffset(6, 8);
 
         this.body.setCollideWorldBounds(true);
         this.scene = scene;
@@ -39,10 +43,24 @@ export class Player extends Phaser.GameObjects.Rectangle {
         if (onGround) {
             this.canDoubleJump = true;
             if (!this.isSliding) {
-                this.currentState = Math.abs(this.body.velocity.x) > 0 ? this.states.WALKING : this.states.IDLE;
+                if (Math.abs(this.body.velocity.x) > 0) {
+                    this.currentState = this.states.WALKING;
+                    this.play('walk', true);
+                } else {
+                    this.currentState = this.states.IDLE;
+                    this.play('idle', true);
+                }
             }
         } else {
             this.currentState = this.states.JUMPING;
+            this.play('jump', true);
+        }
+
+        // Flip sprite based on direction
+        if (this.body.velocity.x > 0) {
+            this.setFlipX(false);
+        } else if (this.body.velocity.x < 0) {
+            this.setFlipX(true);
         }
 
         this.handleMovement(cursors, keyZ, keySpace, keyC, onGround);
@@ -50,7 +68,7 @@ export class Player extends Phaser.GameObjects.Rectangle {
 
         if (this.isInvulnerable) {
             this.invulTimer -= this.scene.game.loop.delta;
-            this.setAlpha(Math.sin(this.scene.time.now / 50) > 0 ? 0.5 : 1);
+            this.setAlpha(Math.sin(this.scene.time.now / 50) > 0 ? 0.3 : 0.8);
             if (this.invulTimer <= 0) {
                 this.isInvulnerable = false;
                 this.setAlpha(1);
@@ -101,18 +119,17 @@ export class Player extends Phaser.GameObjects.Rectangle {
     startSlide(direction) {
         this.isSliding = true;
         this.currentState = this.states.SLIDING;
+        this.play('slide', true);
         this.slideTimer = this.SLIDE_DURATION;
         this.body.setVelocityX(this.SLIDE_SPEED * direction);
-        this.setSize(16, 12);
-        this.setOrigin(0.5, 1);
-        this.y += 6;
+        this.body.setSize(20, 12);
+        this.body.setOffset(6, 20);
     }
 
     stopSlide() {
         this.isSliding = false;
-        this.setSize(16, 24);
-        this.setOrigin(0.5, 0.5);
-        this.y -= 6;
+        this.body.setSize(20, 24);
+        this.body.setOffset(6, 8);
     }
 
     handleCombat(keyX) {
@@ -120,7 +137,7 @@ export class Player extends Phaser.GameObjects.Rectangle {
             this.chargeTimer += this.scene.game.loop.delta;
             if (this.chargeTimer > this.CHARGE_TIME) {
                 this.isCharging = true;
-                this.setFillStyle(0xffffff);
+                this.setTint(0x55ffff); // Brilho de carga
             }
         } else if (Phaser.Input.Keyboard.JustUp(keyX)) {
             if (this.isCharging) {
@@ -130,7 +147,7 @@ export class Player extends Phaser.GameObjects.Rectangle {
             }
             this.isCharging = false;
             this.chargeTimer = 0;
-            this.setFillStyle(0x00aaff);
+            this.clearTint();
         }
     }
 

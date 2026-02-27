@@ -7,10 +7,46 @@ export class MainScene extends Phaser.Scene {
     }
 
     preload() {
-        console.log('Preloading assets...');
+        // Carregar assets do diretório raiz
+        this.load.audio('soundtrack', '../Soundtrack.mp3');
+        this.load.spritesheet('megaman', '../sprite.gif', {
+            frameWidth: 32, // Tamanho padrão estimado para sprites de Megaman NES
+            frameHeight: 32
+        });
     }
 
     create() {
+        // Criar animações do Player
+        this.anims.create({
+            key: 'idle',
+            frames: this.anims.generateFrameNumbers('megaman', { start: 0, end: 0 }),
+            frameRate: 1,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'walk',
+            frames: this.anims.generateFrameNumbers('megaman', { start: 1, end: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'jump',
+            frames: this.anims.generateFrameNumbers('megaman', { start: 4, end: 4 }),
+            frameRate: 1
+        });
+
+        this.anims.create({
+            key: 'slide',
+            frames: this.anims.generateFrameNumbers('megaman', { start: 5, end: 5 }),
+            frameRate: 1
+        });
+
+        // Iniciar Música
+        const music = this.sound.add('soundtrack', { loop: true, volume: 0.5 });
+        music.play();
+
         // Full Level Width
         this.levelWidth = 2000;
         this.physics.world.setBounds(0, 0, this.levelWidth, 224);
