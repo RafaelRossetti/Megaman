@@ -32,7 +32,13 @@ export class Boss extends Phaser.GameObjects.Rectangle {
         }
 
         const distance = Phaser.Math.Distance.Between(this.x, this.y, this.player.x, this.player.y);
-        this.handleAI(distance);
+
+        // Only act if player is relatively near (within 400px)
+        if (distance < 400 || this.hp < this.maxHp) {
+            this.handleAI(distance);
+        } else {
+            this.body.setVelocityX(0); // Stand still
+        }
 
         if (this.hp < this.maxHp / 2) {
             this.currentState = this.states.CHARGE;

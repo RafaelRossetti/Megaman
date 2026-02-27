@@ -23,13 +23,6 @@ export class MainScene extends Phaser.Scene {
         this.player = new Player(this, 50, 150);
         this.physics.add.collider(this.player, this.ground);
 
-        // Camera follow
-        this.cameras.main.setBounds(0, 0, this.levelWidth, 224);
-        this.cameras.main.startFollow(this.player);
-
-        // HUD/Text (Fixed to camera)
-        this.hudText = this.add.text(10, 10, 'MEGAMAN PHASER 3', { fontSize: '10px', fill: '#fff' }).setScrollFactor(0);
-
         // Groups
         this.playerProjectiles = this.physics.add.group();
         this.bossProjectiles = this.physics.add.group();
@@ -38,14 +31,28 @@ export class MainScene extends Phaser.Scene {
         this.createItems();
         this.createBoss();
 
+        // Camera follow
+        this.cameras.main.setBounds(0, 0, this.levelWidth, 224);
+        this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+
+        // HUD (Fixed to camera)
+        this.add.rectangle(10, 10, 50, 10, 0x000000).setScrollFactor(0).setOrigin(0);
+        this.hpBar = this.add.rectangle(12, 12, 46, 6, 0x00ff00).setScrollFactor(0).setOrigin(0);
+        this.add.text(10, 25, 'HP', { fontSize: '8px', fill: '#fff' }).setScrollFactor(0);
+
         // Collisions
+        // Solid body collision between player and boss
+        this.physics.add.collider(this.player, this.boss, () => {
+            this.player.takeDamage(1);
+        });
+
         this.physics.add.overlap(this.playerProjectiles, this.boss, (boss, bullet) => {
             boss.takeDamage(bullet.damage || 1);
             bullet.destroy();
         });
 
         this.physics.add.overlap(this.bossProjectiles, this.player, (player, bullet) => {
-            console.log('Player hit!');
+            player.takeDamage(1);
             bullet.destroy();
         });
 
@@ -76,18 +83,24 @@ export class MainScene extends Phaser.Scene {
         this.physics.add.existing(item);
         item.body.setAllowGravity(false);
         this.physics.add.overlap(this.player, item, () => {
-            console.log(`Picked up ${type}`);
+            if (type === 'Full HP') this.player.hp = this.player.maxHp;
             item.destroy();
         });
     }
 
     createBoss() {
-        this.boss = new Boss(this, this.levelWidth - 100, 150);
+        // Boss starts at the end
+        this.boss = new Boss(this, 1900, 150);
         this.physics.add.collider(this.boss, this.ground);
     }
 
     update(time, delta) {
         this.player.update(this.cursors, this.keyX, this.keyZ, this.keyC, this.keySpace);
         if (this.boss) this.boss.update();
+
+        // Update HP Bar
+        const hpPercent = this.player.hp / this.player.maxHp;
+        this.hpBar.width = 46 * hpPercent;
+        if (hpPercent < 0.3) this.hpBar.setFillStyle(0xff0000);
     }
 }

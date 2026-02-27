@@ -13,6 +13,11 @@ export class Player extends Phaser.GameObjects.Rectangle {
         this.SLIDE_DURATION = 500;
         this.CHARGE_TIME = 1500;
 
+        this.hp = 10;
+        this.maxHp = 10;
+        this.isInvulnerable = false;
+        this.invulTimer = 0;
+
         this.canDoubleJump = false;
         this.isSliding = false;
         this.slideTimer = 0;
@@ -43,11 +48,26 @@ export class Player extends Phaser.GameObjects.Rectangle {
         this.handleMovement(cursors, keyZ, keySpace, keyC, onGround);
         this.handleCombat(keyX);
 
-        if (this.isSliding) {
-            this.slideTimer -= this.scene.game.loop.delta;
-            if (this.slideTimer <= 0) {
-                this.stopSlide();
+        if (this.isInvulnerable) {
+            this.invulTimer -= this.scene.game.loop.delta;
+            this.setAlpha(Math.sin(this.scene.time.now / 50) > 0 ? 0.5 : 1);
+            if (this.invulTimer <= 0) {
+                this.isInvulnerable = false;
+                this.setAlpha(1);
             }
+        }
+    }
+
+    takeDamage(amount) {
+        if (this.isInvulnerable) return;
+
+        this.hp -= amount;
+        this.isInvulnerable = true;
+        this.invulTimer = 1000; // 1s
+        this.scene.cameras.main.shake(100, 0.005);
+
+        if (this.hp <= 0) {
+            this.scene.scene.restart();
         }
     }
 
