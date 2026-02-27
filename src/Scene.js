@@ -7,10 +7,10 @@ export class MainScene extends Phaser.Scene {
     }
 
     preload() {
-        // Carregar assets do diretório raiz
-        this.load.audio('soundtrack', '../Soundtrack.mp3');
-        this.load.spritesheet('megaman', '../sprite.gif', {
-            frameWidth: 32, // Tamanho padrão estimado para sprites de Megaman NES
+        // Corregar assets usando caminhos relativos ao index.html
+        this.load.audio('soundtrack', './Soundtrack.mp3');
+        this.load.spritesheet('megaman', './sprite.gif', {
+            frameWidth: 32,
             frameHeight: 32
         });
     }
